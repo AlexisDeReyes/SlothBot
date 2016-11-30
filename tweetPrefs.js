@@ -8,6 +8,7 @@ module.exports = {
         },
         follow: {
             q: 'from:Sl0thB0t',
+            result_type: 'popular',
             lang: 'en'
         }
     },
