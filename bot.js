@@ -7,7 +7,7 @@ var Twitter = new twit(config);
 
 var follow = function(subscribe) {
     Twitter.get('search/tweets', tweetPrefs.searchParams.follow, function(err, data) {
-        if(!err){
+        if(!err && data.statuses != undefined){
             var tweets = data.statuses;
             var randomTweet = ranDom(tweets);
             
@@ -27,7 +27,12 @@ var follow = function(subscribe) {
             }
         }
         else {
-            logger.error(err, 'SEARCHING for FOLLOWERS')
+            if(!err){
+                logger.error(data, 'SEARCHING for FOLLOWERS')
+            }
+            else {
+                logger.error(err, 'SEARCHING for FOLLOWERS')
+            }
         }
     });
 }
@@ -35,7 +40,7 @@ var follow = function(subscribe) {
 var retweet = function() {
     
     Twitter.get('search/tweets', tweetPrefs.searchParams.retweet, function(err, data){
-        if(!err){
+        if(!err && data.statuses != undefined){
             var tweets = data.statuses;
             var randomTweet = ranDom(tweets);
             
@@ -54,7 +59,12 @@ var retweet = function() {
             }
         }
         else {
-            logger.error(err, 'SEARCHING for TWEETS')
+            if(!err){
+                logger.error(data, 'SEARCHING for TWEETS')
+            }
+            else {
+                logger.error(err, 'SEARCHING for TWEETS')
+            }
         }
     });
 };
@@ -62,21 +72,32 @@ var retweet = function() {
 var favoriteTweet = function(){
   // find the tweet
     Twitter.get('search/tweets', tweetPrefs, function(err,data) {
-        var tweet = data.statuses;
-        var randomTweet = ranDom(tweet);   // pick a random tweet
+        if(!err && data.statuses != undefined){
+            
+            var tweet = data.statuses;
+            var randomTweet = ranDom(tweet);   // pick a random tweet
 
-        if(typeof randomTweet != 'undefined') {
-            Twitter.post('favorites/create', {
-                id: randomTweet.id_str
-            }, 
-            function(err, response){
-                if(err) {
-                    logger.error(err, 'FAVORITING');
-                }
-                else{
-                    logger.log('Favorited!!!');
-                }
-            });
+            if(typeof randomTweet != 'undefined') {
+                Twitter.post('favorites/create', {
+                    id: randomTweet.id_str
+                }, 
+                function(err, response){
+                    if(err) {
+                        logger.error(err, 'FAVORITING');
+                    }
+                    else{
+                        logger.log('Favorited!!!');
+                    }
+                });
+            }
+        }
+        else {
+            if(!err){
+                logger.error(data, 'SEARCHING to FAVORITE')
+            }
+            else {
+                logger.error(err, 'SEARCHING to FAVORITE')
+            }
         }
     });
 }
