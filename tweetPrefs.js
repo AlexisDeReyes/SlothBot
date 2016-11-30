@@ -14,6 +14,7 @@ module.exports = {
     },
     frequency: {
         fav: 4.5 * (3600 * 1000), //Hours in Miliseconds
-        retweet: 1 * (3600 * 1000)
+        retweet: 1.5 * (3600 * 1000),
+        follow: 7 * (3600 * 1000)
     }
 }
