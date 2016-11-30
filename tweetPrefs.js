@@ -2,7 +2,7 @@
 module.exports = { 
     searchParams: {
         retweet: {
-            q: '#sloth OR #slothlove -#lust -#envy -#greed -#gluttony', // https://dev.twitter.com/rest/public/search
+            q: '#sloth OR #slothlove -#lust -#envy -#greed -#gluttony -#goonies', // https://dev.twitter.com/rest/public/search
             result_type: 'recent',
             lang: 'en'
         },
@@ -13,8 +13,8 @@ module.exports = {
         }
     },
     frequency: {
-        fav: 4.5 * (3600 * 1000), //Hours in Miliseconds
-        retweet: 1.5 * (3600 * 1000),
+        fav: (1/3) * (3600 * 1000), //Hours in Miliseconds
+        retweet: (1/60) * (3600 * 1000),
         follow: 7 * (3600 * 1000)
     }
 }

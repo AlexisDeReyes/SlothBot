@@ -85,7 +85,7 @@ var retweetCallBack = function(err, data){
 }
 
 var retweet = function() {
-    if(cachedTweets == null || timespan.fromDates(lastFetch, new Date()) > CacheRefreshPeriod ) {
+    if(true || cachedTweets == null || timespan.fromDates(lastFetch, new Date()) > CacheRefreshPeriod) {
         Twitter.get('search/tweets', tweetPrefs.searchParams.retweet, retweetCallBack);
     }
     else {
@@ -125,7 +125,7 @@ var favoriteCallBack = function(err, data) {
 }
 
 var favoriteTweet = function() {
-    if(cachedTweets == null || timespan.fromDates(lastFetch, new Date()) > CacheRefreshPeriod ) {
+    if(true || cachedTweets == null || timespan.fromDates(lastFetch, new Date()) > CacheRefreshPeriod) {
         Twitter.get('search/tweets', tweetPrefs.searchParams.retweet, favoriteCallBack);
     }
     else {
