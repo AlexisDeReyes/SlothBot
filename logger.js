@@ -13,7 +13,7 @@ module.exports = {
         logger.log(data);
     },
     error: function(err, whatYoureDoing){
-        logger.log('Something went wrong while ' + whatYoureDoing + '...');
+        logger.error('Something went wrong while ' + whatYoureDoing + '...');
         logger.error(err.message);
     }
 }

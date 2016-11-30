@@ -2,14 +2,23 @@ var twit = require('twit');
 var config = require('./config.js');
 var tweetPrefs = require('./tweetPrefs.js');
 var logger = require('./logger.js');
+var timespan = require('timespan');
 
 var Twitter = new twit(config);
 
-var follow = function(subscribe) {
-    Twitter.get('search/tweets', tweetPrefs.searchParams.follow, function(err, data) {
-        if(!err && data.statuses != undefined){
-            var tweets = data.statuses;
-            var randomTweet = ranDom(tweets);
+var cachedTweets = null;
+var lastFetch = new Date();
+var CacheRefreshPeriod = new timespan.TimeSpan().addMinutes(15);
+var storeTweets = function(data) {
+    cachedTweets = data;
+    lastFetch = new Date();
+}
+
+
+var followCallBack = function(err, data){
+    if(!err && data.statuses != undefined){
+            storeTweets(data);
+            var randomTweet = ranDom(cachedTweets.statuses);
             
             var followedSomeone = false;
             while(!followedSomeone){
@@ -34,26 +43,33 @@ var follow = function(subscribe) {
                 logger.error(err, 'SEARCHING for FOLLOWERS')
             }
         }
-    });
 }
 
-var retweet = function() {
-    
-    Twitter.get('search/tweets', tweetPrefs.searchParams.retweet, function(err, data){
-        if(!err && data.statuses != undefined){
-            var tweets = data.statuses;
-            var randomTweet = ranDom(tweets);
+var follow = function(subscribe) {
+    if(cachedTweets == null || timespan.fromDates(lastFetch, new Date()) > CacheRefreshPeriod ) {
+        Twitter.get('search/tweets', tweetPrefs.searchParams.follow, followCallBack);
+    }
+    else {
+        logger.log('using cached Tweets');
+        followCallBack(false, cachedTweets);
+    }
+}
+
+var retweetCallBack = function(err, data){
+    if(!err && data.statuses != undefined){
+            storeTweets(data);
+            var randomTweet = ranDom(cachedTweets.statuses);
             
             if(typeof randomTweet != 'undefined'){
                 Twitter.post('statuses/retweet/:id', {
                     id: randomTweet.id_str
                 }, 
                 function(err, response){
-                    if(response){
-                        logger.log('Retweeted!!!');
-                    }
                     if(err){
                         logger.error(err, 'RETWEETING');
+                    }
+                    else {
+                        logger.log('Retweeted!!!');
                     }
                 });
             }
@@ -66,16 +82,23 @@ var retweet = function() {
                 logger.error(err, 'SEARCHING for TWEETS')
             }
         }
-    });
+}
+
+var retweet = function() {
+    if(cachedTweets == null || timespan.fromDates(lastFetch, new Date()) > CacheRefreshPeriod ) {
+        Twitter.get('search/tweets', tweetPrefs.searchParams.retweet, retweetCallBack);
+    }
+    else {
+        logger.log('using cached Tweets');
+        retweetCallBack(false, cachedTweets);
+    }
 };
 
-var favoriteTweet = function(){
-  // find the tweet
-    Twitter.get('search/tweets', tweetPrefs, function(err,data) {
-        if(!err && data.statuses != undefined){
+var favoriteCallBack = function(err, data) {
+    if(!err && data.statuses != undefined) {
             
-            var tweet = data.statuses;
-            var randomTweet = ranDom(tweet);   // pick a random tweet
+            storeTweets(data)
+            var randomTweet = ranDom(cachedTweets.statuses);   // pick a random tweet
 
             if(typeof randomTweet != 'undefined') {
                 Twitter.post('favorites/create', {
@@ -85,7 +108,7 @@ var favoriteTweet = function(){
                     if(err) {
                         logger.error(err, 'FAVORITING');
                     }
-                    else{
+                    else {
                         logger.log('Favorited!!!');
                     }
                 });
@@ -99,17 +122,26 @@ var favoriteTweet = function(){
                 logger.error(err, 'SEARCHING to FAVORITE')
             }
         }
-    });
 }
 
-// function to generate a random tweet tweet
-function ranDom (arr) {
+var favoriteTweet = function() {
+    if(cachedTweets == null || timespan.fromDates(lastFetch, new Date()) > CacheRefreshPeriod ) {
+        Twitter.get('search/tweets', tweetPrefs.searchParams.retweet, favoriteCallBack);
+    }
+    else {
+        logger.log('using cached Tweets');
+        favoriteCallBack(false, cachedTweets);
+    }
+};
+
+var ranDom = function(arr) {
   var index = Math.floor(Math.random()*arr.length);
   return arr[index];
 };
 
 favoriteTweet();
 retweet();
+//follow();
 
 setInterval(favoriteTweet, tweetPrefs.frequency.fav)
 
