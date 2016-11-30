@@ -13,8 +13,8 @@ module.exports = {
         }
     },
     frequency: {
-        fav: (1/3) * (3600 * 1000), //Hours in Miliseconds
-        retweet: (1/60) * (3600 * 1000),
+        fav: 3 * (3600 * 1000), //Hours in Miliseconds
+        retweet: 1 * (3600 * 1000),
         follow: 7 * (3600 * 1000)
     }
 }
