@@ -10,10 +10,10 @@ const logger = new Console(output, errorOutput);
 
 module.exports = {
     log: function(data){
-        logger.log(data);
+        logger.log(new Date().toDateString() + ': ' + data);
     },
     error: function(err, whatYoureDoing){
-        logger.error('Something went wrong while ' + whatYoureDoing + '...');
+        logger.error(new Date().toDateString() + ': Something went wrong while ' + whatYoureDoing + '...');
         logger.error(err.message);
     }
 }
