@@ -6,7 +6,7 @@ var Twitter = new twit(config);
 
 var retweet = function() {
     
-    Twitter.get('search/tweets', tweetPrefs, function(err, data){
+    Twitter.get('search/tweets', tweetPrefs.searchParams.retweet, function(err, data){
         if(!err){
             var tweets = data.statuses;
             var randomTweet = ranDom(tweets);
@@ -49,7 +49,7 @@ var favoriteTweet = function(){
             // if there was an error while 'favorite'
                 if(err){
                     console.log('CANNOT BE FAVORITE... Error');
-		    console.error(err.message);
+		            console.error(err.message);
                 }
                 else{
                     console.log('FAVORITED... Success!!');
@@ -65,11 +65,9 @@ function ranDom (arr) {
   return arr[index];
 };
 
-retweet();
-favoriteTweet();
-//setInterval(favoriteTweet, 5400000)
+setInterval(favoriteTweet, tweetPrefs.frequency.fav)
 
-//setInterval(retweet, 3600000);
+setInterval(retweet, tweetPrefs.frequency.retweet);
 
 module.exports.retweet = retweet;
 module.exports.favoriteTweet = favoriteTweet;
