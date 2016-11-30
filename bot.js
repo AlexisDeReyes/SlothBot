@@ -87,6 +87,9 @@ function ranDom (arr) {
   return arr[index];
 };
 
+favoriteTweet();
+retweet();
+
 setInterval(favoriteTweet, tweetPrefs.frequency.fav)
 
 setInterval(retweet, tweetPrefs.frequency.retweet);
