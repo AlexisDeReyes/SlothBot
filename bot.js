@@ -1,45 +1,69 @@
+// bot.js
+/// Dependencies
+
 var twit = require('twit');
 var config = require('./config.js');
 var tweetPrefs = require('./tweetPrefs.js');
 var Logger = require('./logger.js');
 var Twitter = new twit(config);
-var Moment = require('moment');
+var moment = require('moment');
+
+/// Caching variables
 
 var cachedTweets = null;
-var lastFetch = new Date();
-var cacheRefreshPeriod = new timespan.TimeSpan().addMinutes(15);
+var lastFetch = moment();
+var cacheRefreshPeriod = moment.duration(1, 'hours').asMilliseconds();
+
+/// Constansts
 
 const Actions = {
-    Follow: 'Follow',
-    Retweet: 'Retweet',
-    Favorite: 'Favorite'
+    Follow: {
+        action: 'Follow',
+        doing: 'Following',
+        done: 'Followed',
+        postResource: 'friendships/create'
+    },
+    Retweet: {
+        action: 'Retweet',
+        doing: 'Retweeting',
+        done: 'Retweeted',
+        postResource: 'statuses/retweet/:id'
+    },
+    Favorite: {
+        action: 'Favorite',
+        doing: 'Favoriting',
+        done: 'Favorited',
+        postResource: 'favorites/create'
+    }
 };
 
 /// Individual Capabilities
 
 var follow = function() {
-    initiateAction(tweetPrefs.searchParams.follow, Actions.Follow, 'Following', 'Followed')
+    initiateAction(tweetPrefs.searchParams.follow, Actions.Follow)
 };
 
 var retweet = function() {
-    initiateAction(tweetPrefs.searchParams.retweet, Actions.Retweet, 'Retweeting', 'Retweeted');
+    initiateAction(tweetPrefs.searchParams.retweet, Actions.Retweet);
 };
 
 var favoriteTweet = function() {
-    InitiateAction(tweetPrefs.searchParams.retweet, Actions.Favorite, 'Favoriting', 'Favorited');
+    initiateAction(tweetPrefs.searchParams.retweet, Actions.Favorite);
 };
 
 //Structure of Calls and Actions
 
-var initiateAction = function(searchParams, action, doing, done) {
-    searchTweets(searchParams, function(err, data) {
-        executeAction(err, data, action, postResource, createActionResponseCB(doing, done));
+var initiateAction = function(searchParams, action) {
+    searchTweets(searchParams, action, function(err, data) {
+        executeAction(err, data, action, createActionResponseCB(action.doing, action.done));
     });
 }
 
-var searchTweets = function(searchParams, callBack) {
-    if(cachedTweets == null || timespan.fromDates(lastFetch, new Date()) > cacheRefreshPeriod ) {
-        Twitter.get('search/tweets', searchParams, callBack);
+var searchTweets = function(searchParams, action, callBack) {
+    if(true || cachedTweets == null || (moment() - lastFetch) > cacheRefreshPeriod ) {
+        Logger.debug('fetching tweets to ' + action.action)
+        var resource = isFollow(action) ? 'statuses/home_timeline' : 'search/tweets';
+        Twitter.get(resource, searchParams, callBack);
     }
     else {
         Logger.debug('using cached Tweets');
@@ -47,24 +71,33 @@ var searchTweets = function(searchParams, callBack) {
     }
 };
 
-var executeAction = function(err, data, action, postResource, requestCB){
-    if(!err && data.statuses != undefined) {
-        storeTweets(data);
+var executeAction = function(err, data, action, requestCB){
+    var responseCheck = isFollow(action) ? !err : (data.statuses != undefined);
+    if(!err && responseCheck) {
+        storeTweets(data, action);
         var randomTweet = ranDom(cachedTweets.statuses);
         if(typeof randomTweet != 'undefined') {
-            if(action === Actions.Follow){
-                Twitter.post(postResource, {
-                    user_id: randomTweet.user.id_str,
-                    follow: true
-                }, requestCB);
+            if(isFollow(action)){
+                Twitter.get('statuses/show/:id', {
+                    id: randomTweet.id_str
+                }, function(err, data){
+                    if(err) {
+                        Logger.error(err, 'requesting a specific status for FOLLOWING');
+                    }
+                    else {
+                        Twitter.post(action.postResource, {
+                            user_id: data.user.id_str
+                        }, requestCB)    
+                    }
+                });
             }
             else {
-                Twitter.post(postResource, {id: randomTweet.id_str}, requestCB);
+                Twitter.post(action.postResource, {id: randomTweet.id_str}, requestCB);
             }
         }
     }
     else {
-        var msg = 'SEARCHING to ' + action.toUpperCase();
+        var msg = 'SEARCHING to ' + action.action.toUpperCase();
         if(!err){
             Logger.error(data, msg);
         }
@@ -85,8 +118,19 @@ var createActionResponseCB = function(doing, complete){
     };
 };
 
-var storeTweets = function(data) {
-    cachedTweets = data;
+var isFollow = function(action){
+    return action.action === Actions.Follow.action;
+}
+
+var storeTweets = function(data, action) {
+    if(isFollow(action)){
+        cachedTweets = {
+            statuses: data
+        };
+    }
+    else {
+        cachedTweets = data;
+    }
     lastFetch = new Date();
 };
 
@@ -99,9 +143,11 @@ var ranDom = function(arr) {
 
 /// Immediate Actions
 
-favoriteTweet();
-retweet();
-//follow();
+follow();
+
+// favoriteTweet();
+// setTimeout(retweet, 5000);
+// setTimeout(follow, 10000);
 
 /// Ongoing Processes
 

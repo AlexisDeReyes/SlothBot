@@ -7,9 +7,8 @@ module.exports = {
             lang: 'en'
         },
         follow: {
-            q: 'from:Sl0thB0t',
-            result_type: 'popular',
-            lang: 'en'
+            count: 10,
+            trim_user: true,
         }
     },
     frequency: {

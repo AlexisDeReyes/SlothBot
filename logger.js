@@ -12,17 +12,15 @@ const logger = new Console(output, errorOutput);
 
 module.exports = {
     info: function(data){
-        logger.log((moment().format() + ': ' + data).green);
+        logger.log('INFO - ' + moment().format() + ': ' + data);
     },
     debug: function(data) {
-        logger.log((moment().format() + ': ' + data).gray);
+        logger.log('DEBUG - ' + moment().format() + ': ' + data);
     },
     warn: function(err, data){
-        logger.log((moment().format() + ': ' + data).yellow);
-        logger.log(err.message.yellow);
+        logger.log('WARN - ' + moment().format() + ': ' + data + '\n\t' + err.message);
     },
     error: function(err, whatYoureDoing){
-        logger.error((moment().format() + ': Something went wrong while ' + whatYoureDoing + '...').red);
-        logger.error(err.message.red);
+        logger.error('ERROR - ' + moment().format() + ': Something went wrong while ' + whatYoureDoing + '...\n\t' + err.message);
     }
 }
