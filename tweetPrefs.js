@@ -2,7 +2,7 @@
 module.exports = { 
     searchParams: {
         retweet: {
-            q: '#sloth OR #slothlove -#lust -#envy -#greed -#gluttony -#goonies -#sin', // https://dev.twitter.com/rest/public/search
+            q: '#sloth OR #slothlove -#lust -#envy -#greed -#gluttony -#goonies -#sin filter:safe', // https://dev.twitter.com/rest/public/search
             result_type: 'recent',
             lang: 'en'
         },
