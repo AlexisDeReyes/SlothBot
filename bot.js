@@ -1,147 +1,155 @@
+// bot.js
+/// Dependencies
+
 var twit = require('twit');
 var config = require('./config.js');
 var tweetPrefs = require('./tweetPrefs.js');
-var logger = require('./logger.js');
-var timespan = require('timespan');
-
+var Logger = require('./logger.js');
 var Twitter = new twit(config);
+var moment = require('moment');
+
+/// Caching variables
 
 var cachedTweets = null;
-var lastFetch = new Date();
-var CacheRefreshPeriod = new timespan.TimeSpan().addMinutes(15);
-var storeTweets = function(data) {
-    cachedTweets = data;
-    lastFetch = new Date();
-}
+var lastFetch = moment();
+var cacheRefreshPeriod = moment.duration(1, 'hours').asMilliseconds();
 
+/// Constansts
 
-var followCallBack = function(err, data){
-    if(!err && data.statuses != undefined){
-            storeTweets(data);
-            var randomTweet = ranDom(cachedTweets.statuses);
-            
-            var followedSomeone = false;
-            while(!followedSomeone){
-                Twitter.post('friendships/create', {
-                    user_id: randomTweet.user.id_str,
-                    follow: subscribe
-                }, function(err, data){
-                    if(err){
-                        logger.error(err, "FOLLOWING");
-                    }
-                    else {
-                        logger.log('Followed Someone!!!!');
-                    }   
-                });
-            }
-        }
-        else {
-            if(!err){
-                logger.error(data, 'SEARCHING for FOLLOWERS')
-            }
-            else {
-                logger.error(err, 'SEARCHING for FOLLOWERS')
-            }
-        }
-}
-
-var follow = function(subscribe) {
-    if(cachedTweets == null || timespan.fromDates(lastFetch, new Date()) > CacheRefreshPeriod ) {
-        Twitter.get('search/tweets', tweetPrefs.searchParams.follow, followCallBack);
+const Actions = {
+    Follow: {
+        action: 'Follow',
+        doing: 'Following',
+        done: 'Followed',
+        postResource: 'friendships/create'
+    },
+    Retweet: {
+        action: 'Retweet',
+        doing: 'Retweeting',
+        done: 'Retweeted',
+        postResource: 'statuses/retweet/:id'
+    },
+    Favorite: {
+        action: 'Favorite',
+        doing: 'Favoriting',
+        done: 'Favorited',
+        postResource: 'favorites/create'
     }
-    else {
-        logger.log('using cached Tweets');
-        followCallBack(false, cachedTweets);
-    }
-}
+};
 
-var retweetCallBack = function(err, data){
-    if(!err && data.statuses != undefined){
-            storeTweets(data);
-            var randomTweet = ranDom(cachedTweets.statuses);
-            
-            if(typeof randomTweet != 'undefined'){
-                Twitter.post('statuses/retweet/:id', {
-                    id: randomTweet.id_str
-                }, 
-                function(err, response){
-                    if(err){
-                        logger.error(err, 'RETWEETING');
-                    }
-                    else {
-                        logger.log('Retweeted!!!');
-                    }
-                });
-            }
-        }
-        else {
-            if(!err){
-                logger.error(data, 'SEARCHING for TWEETS')
-            }
-            else {
-                logger.error(err, 'SEARCHING for TWEETS')
-            }
-        }
-}
+/// Individual Capabilities
+
+var follow = function() {
+    initiateAction(tweetPrefs.searchParams.follow, Actions.Follow)
+};
 
 var retweet = function() {
-    if(true || cachedTweets == null || timespan.fromDates(lastFetch, new Date()) > CacheRefreshPeriod) {
-        Twitter.get('search/tweets', tweetPrefs.searchParams.retweet, retweetCallBack);
+    initiateAction(tweetPrefs.searchParams.retweet, Actions.Retweet);
+};
+
+var favoriteTweet = function() {
+    initiateAction(tweetPrefs.searchParams.retweet, Actions.Favorite);
+};
+
+//Structure of Calls and Actions
+
+var initiateAction = function(searchParams, action) {
+    searchTweets(searchParams, action, function(err, data) {
+        executeAction(err, data, action, createActionResponseCB(action.doing, action.done));
+    });
+}
+
+var searchTweets = function(searchParams, action, callBack) {
+    if(true || cachedTweets == null || (moment() - lastFetch) > cacheRefreshPeriod ) {
+        Logger.debug('fetching tweets to ' + action.action)
+        var resource = isFollow(action) ? 'statuses/home_timeline' : 'search/tweets';
+        Twitter.get(resource, searchParams, callBack);
     }
     else {
-        logger.log('using cached Tweets');
-        retweetCallBack(false, cachedTweets);
+        Logger.debug('using cached Tweets');
+        callBack(false, cachedTweets);
     }
 };
 
-var favoriteCallBack = function(err, data) {
-    if(!err && data.statuses != undefined) {
-            
-            storeTweets(data)
-            var randomTweet = ranDom(cachedTweets.statuses);   // pick a random tweet
-
-            if(typeof randomTweet != 'undefined') {
-                Twitter.post('favorites/create', {
+var executeAction = function(err, data, action, requestCB){
+    var responseCheck = isFollow(action) ? !err : (data.statuses != undefined);
+    if(!err && responseCheck) {
+        storeTweets(data, action);
+        var randomTweet = ranDom(cachedTweets.statuses);
+        if(typeof randomTweet != 'undefined') {
+            if(isFollow(action)){
+                Twitter.get('statuses/show/:id', {
                     id: randomTweet.id_str
-                }, 
-                function(err, response){
+                }, function(err, data){
                     if(err) {
-                        logger.error(err, 'FAVORITING');
+                        Logger.error(err, 'requesting a specific status for FOLLOWING');
                     }
                     else {
-                        logger.log('Favorited!!!');
+                        Twitter.post(action.postResource, {
+                            user_id: data.user.id_str
+                        }, requestCB)    
                     }
                 });
             }
-        }
-        else {
-            if(!err){
-                logger.error(data, 'SEARCHING to FAVORITE')
-            }
             else {
-                logger.error(err, 'SEARCHING to FAVORITE')
+                Twitter.post(action.postResource, {id: randomTweet.id_str}, requestCB);
             }
         }
-}
-
-var favoriteTweet = function() {
-    if(true || cachedTweets == null || timespan.fromDates(lastFetch, new Date()) > CacheRefreshPeriod) {
-        Twitter.get('search/tweets', tweetPrefs.searchParams.retweet, favoriteCallBack);
     }
     else {
-        logger.log('using cached Tweets');
-        favoriteCallBack(false, cachedTweets);
+        var msg = 'SEARCHING to ' + action.action.toUpperCase();
+        if(!err){
+            Logger.error(data, msg);
+        }
+        else {
+            Logger.error(err, msg);
+        }
     }
+}
+
+var createActionResponseCB = function(doing, complete){
+    return function(err, response){
+        if(err) {
+            Logger.error(err, doing.toUpperCase());
+        }
+        else {
+            Logger.info(complete + '!!!');
+        }
+    };
 };
+
+var isFollow = function(action){
+    return action.action === Actions.Follow.action;
+}
+
+var storeTweets = function(data, action) {
+    if(isFollow(action)){
+        cachedTweets = {
+            statuses: data
+        };
+    }
+    else {
+        cachedTweets = data;
+    }
+    lastFetch = new Date();
+};
+
+/// Random Tooling
 
 var ranDom = function(arr) {
   var index = Math.floor(Math.random()*arr.length);
   return arr[index];
 };
 
-favoriteTweet();
-retweet();
-//follow();
+/// Immediate Actions
+
+follow();
+
+// favoriteTweet();
+// setTimeout(retweet, 5000);
+// setTimeout(follow, 10000);
+
+/// Ongoing Processes
 
 setInterval(favoriteTweet, tweetPrefs.frequency.fav)
 

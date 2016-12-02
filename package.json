@@ -1,5 +1,5 @@
 {
-  "name": "slothbot",
+  "name": "sl0thb0t",
   "version": "1.0.0",
   "description": "A Twitter bot that loves sloths",
   "main": "bot.js",
@@ -9,6 +9,21 @@
   "author": "Alexis Reyes",
   "license": "MIT",
   "dependencies": {
-    "twit": "^2.2.5"
-  }
+    "twit": "^2.2.5",
+    "moment": "^2.17.0",
+    "colors": "^1.1.2"
+  },
+  "devDependencies": { 
+  },
+  "engines": {
+    "node": "4.4.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlexisDeReyes/SlothBot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/AlexisDeReyes/SlothBot/issues"
+  },
+  "homepage": "https://github.com/AlexisDeReyes/SlothBot#readme"
 }
