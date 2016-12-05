@@ -9,12 +9,11 @@
   "author": "Alexis Reyes",
   "license": "MIT",
   "dependencies": {
-    "twit": "^2.2.5",
     "moment": "^2.17.0",
-    "colors": "^1.1.2"
+    "sift": "^3.2.6",
+    "twit": "^2.2.5"
   },
-  "devDependencies": { 
-  },
+  "devDependencies": {},
   "engines": {
     "node": "4.4.3"
   },

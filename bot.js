@@ -7,6 +7,7 @@ var tweetPrefs = require('./tweetPrefs.js');
 var Logger = require('./logger.js');
 var Twitter = new twit(config);
 var moment = require('moment');
+var sift = require('sift');
 
 /// Caching variables
 
@@ -75,16 +76,17 @@ var executeAction = function(err, data, action, requestCB){
     var responseCheck = isFollow(action) ? !err : (data.statuses != undefined);
     if(!err && responseCheck) {
         storeTweets(data, action);
-        var randomTweet = ranDom(cachedTweets.statuses);
-        if(typeof randomTweet != 'undefined') {
+        var randomTweet = findAptTweet(cachedTweets.statuses, action);
+        if(typeof randomTweet != 'undefined' && randomTweet != null) {
             if(isFollow(action)){
                 Twitter.get('statuses/show/:id', {
-                    id: randomTweet.id_str
+                    id: randomTweet.retweeted_status.id_str
                 }, function(err, data){
                     if(err) {
                         Logger.error(err, 'requesting a specific status for FOLLOWING');
                     }
                     else {
+                        Logger.debug('About to Follow user ' + data.user.screen_name);
                         Twitter.post(action.postResource, {
                             user_id: data.user.id_str
                         }, requestCB)    
@@ -136,23 +138,40 @@ var storeTweets = function(data, action) {
 
 /// Random Tooling
 
-var ranDom = function(arr) {
-  var index = Math.floor(Math.random()*arr.length);
-  return arr[index];
+var findAptTweet = function(arr, action) {
+    var sifted = arr;
+    if(action.action === Actions.Follow.action){
+       sifted = sift({ user : { following: false}}, arr);
+    } else if(action.action === Actions.Retweet.action){
+        sifted = sift({ retweeted : false}, arr);
+    } else {
+        sifted = sift({ favorited : false}, arr);
+    }
+    if(sifted.length > 0){
+        var index = Math.floor(Math.random()*sifted.length);
+        return sifted[index];
+    }
+    return null;
 };
 
 /// Immediate Actions
 
-follow();
+//follow();
 
-// favoriteTweet();
-// setTimeout(retweet, 5000);
-// setTimeout(follow, 10000);
+ favoriteTweet();
+ setTimeout(retweet, 5000);
+ setTimeout(follow, 10000);
 
 /// Ongoing Processes
 
-setInterval(favoriteTweet, tweetPrefs.frequency.fav)
+//setInterval(favoriteTweet, tweetPrefs.frequency.fav)
 
-setInterval(retweet, tweetPrefs.frequency.retweet);
+//setInterval(retweet, tweetPrefs.frequency.retweet);
 
 //setInterval(follow, tweetPrefs.frequency.follow);
+
+/// Exports
+
+// module.exports.follow = follow;
+// module.exports.retweet = retweet;
+// module.exports.favoriteTweet = favoriteTweet;

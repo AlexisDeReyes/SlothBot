@@ -7,8 +7,7 @@ module.exports = {
             lang: 'en'
         },
         follow: {
-            count: 10,
-            trim_user: true,
+            count: 10
         }
     },
     frequency: {
