@@ -164,11 +164,11 @@ var findAptTweet = function(arr, action) {
 
 /// Ongoing Processes
 
-//setInterval(favoriteTweet, tweetPrefs.frequency.fav)
+setInterval(favoriteTweet, tweetPrefs.frequency.fav)
 
-//setInterval(retweet, tweetPrefs.frequency.retweet);
+setInterval(retweet, tweetPrefs.frequency.retweet);
 
-//setInterval(follow, tweetPrefs.frequency.follow);
+setInterval(follow, tweetPrefs.frequency.follow);
 
 /// Exports
 
