@@ -86,7 +86,7 @@ var refollow = function(){
                             });
                         }
                         else {
-                            Logger.debug('No users to follow');
+                            Logger.debug('No followers to follow');
                         }
                     } else {
                         Logger.error(err, 'Retrieving User data to' + action.action.toUpperCase())
@@ -110,8 +110,8 @@ var refollow = function(){
                 }
             });    
         }
+        Logger.debug('No followers to follow');
     }
-    Logger.debug('No users to follow');
 }
 
 //Structure of Calls and Actions
