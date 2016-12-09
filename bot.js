@@ -8,12 +8,17 @@ var Logger = require('./logger.js');
 var Twitter = new twit(config);
 var moment = require('moment');
 var sift = require('sift');
+var compareBy = require('./comparers.js');
 
 /// Caching variables
 
 var cachedTweets = null;
 var lastFetch = moment();
 var cacheRefreshPeriod = moment.duration(1, 'hours').asMilliseconds();
+
+var cachedUsers = null;
+var lastFetchedUsers = moment();
+var userRefreshPeriod = moment.duration(1, 'days').asMilliseconds();
 
 /// Constansts
 
@@ -23,6 +28,12 @@ const Actions = {
         doing: 'Following',
         done: 'Followed',
         postResource: 'friendships/create'
+    },
+    ReFollow: {
+      action: 'Refollow',
+      doing: 'Refollowing',
+      done: 'Refollowed',
+      postResource: 'friendships/create'
     },
     Retweet: {
         action: 'Retweet',
@@ -51,6 +62,51 @@ var retweet = function() {
 var favoriteTweet = function() {
     initiateAction(tweetPrefs.searchParams.retweet, Actions.Favorite);
 };
+
+var refollow = function(){
+    var action = Actions.ReFollow;
+    if(cachedUsers == null || (moment() - lastFetchedUsers) > userRefreshPeriod) {
+        Logger.debug('Fetching Follower List');
+        Twitter.get('followers/ids', tweetPrefs.searchParams.refollow, function(err, data) {
+            if(!err){
+                Twitter.get('users/lookup', {user_id: data.ids.join(',')},  function(err, data){
+                    if(!err) {
+                        var usersNotFollowed = sift({following: false}, data);
+                        if(usersNotFollowed.length > 0){
+                            cachedUsers = usersNotFollowed;
+                            lastFetchedUsers = moment();
+                            var popularUser = usersNotFollowed.sort(compareBy.popularity)[0];
+                            Twitter.post(action.postResource, { user_id: popularUser.id_str }, function(err, data){
+                                if(err) {
+                                    Logger.error(err, action.doing.toUpperCase());
+                                }
+                                else {
+                                    Logger.info(action.done + '!!!');
+                                }
+                            });
+                        }
+                    } else {
+                        Logger.error(err, 'Retrieving User data to' + action.action.toUpperCase())
+                    }       
+                });
+            } else {
+                Logger.error(err, 'SEARCHING to ' + action.action.toUpperCase());
+            }
+        });
+    } else {
+        Logger.debug('Using cached follower list');
+        var usersNotFollowed = sift({following: false}, cachedUsers);
+        var popularUser = usersNotFollowed.sort(compareBy.popularity)[0];
+        Twitter.post(action.postResource, { user_id: popularUser.id_str }, function(err, data){
+            if(err) {
+                Logger.error(err, action.doing.toUpperCase());
+            }
+            else {
+                Logger.info(action.done + '!!!');
+            }
+        });
+    }
+}
 
 //Structure of Calls and Actions
 
@@ -156,11 +212,14 @@ var findAptTweet = function(arr, action) {
 
 /// Immediate Actions
 
+//refollow();
+
 //follow();
 
- favoriteTweet();
- setTimeout(retweet, 5000);
- setTimeout(follow, 10000);
+favoriteTweet();
+setTimeout(retweet, 5000);
+setTimeout(follow, 10000);
+setTimeout(refollow, 15000);
 
 /// Ongoing Processes
 
@@ -169,6 +228,8 @@ setInterval(favoriteTweet, tweetPrefs.frequency.fav)
 setInterval(retweet, tweetPrefs.frequency.retweet);
 
 setInterval(follow, tweetPrefs.frequency.follow);
+
+setInterval(refollow, tweetPrefs.frequency.refollow);
 
 /// Exports
 

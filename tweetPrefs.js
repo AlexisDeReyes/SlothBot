@@ -1,4 +1,7 @@
 //tweetPrefs.js
+
+var HoursInMilliseconds = 3600 * 1000;
+
 module.exports = { 
     searchParams: {
         retweet: {
@@ -8,11 +11,16 @@ module.exports = {
         },
         follow: {
             count: 10
+        },
+        refollow: {
+            screen_name: 'Sl0tHB0T',
+            count: 200
         }
     },
     frequency: {
-        fav: 3 * (3600 * 1000), //Hours in Miliseconds
-        retweet: 1 * (3600 * 1000),
-        follow: 7 * (3600 * 1000)
+        fav: 3 * HoursInMilliseconds,
+        retweet: 1 * HoursInMilliseconds,
+        follow: 7 * HoursInMilliseconds,
+        refollow: 2 * HoursInMilliseconds
     }
 }
