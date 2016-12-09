@@ -68,7 +68,7 @@ var refollow = function(){
     if(cachedUsers == null || (moment() - lastFetchedUsers) > userRefreshPeriod) {
         Logger.debug('Fetching Follower List');
         Twitter.get('followers/ids', tweetPrefs.searchParams.refollow, function(err, data) {
-            if(!err){
+            if(!err) {
                 Twitter.get('users/lookup', {user_id: data.ids.join(',')},  function(err, data){
                     if(!err) {
                         var usersNotFollowed = sift({following: false}, data);
@@ -99,7 +99,7 @@ var refollow = function(){
     } else {
         Logger.debug('Using cached follower list');
         var usersNotFollowed = sift({following: false}, cachedUsers);
-        if(usersNotFollowed){
+        if(usersNotFollowed.length > 0){
             var popularUser = usersNotFollowed.sort(compareBy.popularity)[0];
             Twitter.post(action.postResource, { user_id: popularUser.id_str }, function(err, data){
                 if(err) {
