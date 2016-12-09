@@ -72,7 +72,7 @@ var refollow = function(){
                 Twitter.get('users/lookup', {user_id: data.ids.join(',')},  function(err, data){
                     if(!err) {
                         var usersNotFollowed = sift({following: false}, data);
-                        if(usersNotFollowed.length > 0){
+                        if(usersNotFollowed.length > 0) {
                             cachedUsers = usersNotFollowed;
                             lastFetchedUsers = moment();
                             var popularUser = usersNotFollowed.sort(compareBy.popularity)[0];
@@ -85,6 +85,9 @@ var refollow = function(){
                                 }
                             });
                         }
+                        else {
+                            Logger.debug('No users to follow');
+                        }
                     } else {
                         Logger.error(err, 'Retrieving User data to' + action.action.toUpperCase())
                     }       
@@ -96,16 +99,19 @@ var refollow = function(){
     } else {
         Logger.debug('Using cached follower list');
         var usersNotFollowed = sift({following: false}, cachedUsers);
-        var popularUser = usersNotFollowed.sort(compareBy.popularity)[0];
-        Twitter.post(action.postResource, { user_id: popularUser.id_str }, function(err, data){
-            if(err) {
-                Logger.error(err, action.doing.toUpperCase());
-            }
-            else {
-                Logger.info(action.done + '!!!');
-            }
-        });
+        if(usersNotFollowed){
+            var popularUser = usersNotFollowed.sort(compareBy.popularity)[0];
+            Twitter.post(action.postResource, { user_id: popularUser.id_str }, function(err, data){
+                if(err) {
+                    Logger.error(err, action.doing.toUpperCase());
+                }
+                else {
+                    Logger.info(action.done + '!!!');
+                }
+            });    
+        }
     }
+    Logger.debug('No users to follow');
 }
 
 //Structure of Calls and Actions
