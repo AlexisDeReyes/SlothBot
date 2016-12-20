@@ -13,7 +13,13 @@
     "sift": "^3.2.6",
     "twit": "^2.2.5"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "standard": "^8.6.0"
+  },
+  "jshintConfig": {
+    "undef": true,
+    "unused": true
+  },
   "engines": {
     "node": "4.4.3"
   },
